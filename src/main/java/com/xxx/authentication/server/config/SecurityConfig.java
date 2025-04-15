@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -30,6 +31,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.List;
 import java.util.UUID;
 
 //@Configuration
@@ -124,8 +126,9 @@ import java.util.UUID;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-
+private final OAuth2ClientProperties properties;
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -182,26 +185,46 @@ public class SecurityConfig {
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
-        RegisteredClient webClient = RegisteredClient.withId("web-client-id")
-                .clientId("web-client")
-                .clientSecret("{noop}web-secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .scope(OidcScopes.OPENID)
-                .scope(OidcScopes.PROFILE)
-                .scope("api.read")
-                .build();
+//        RegisteredClient webClient = RegisteredClient.withId("web-client-id")
+//                .clientId("web-client")
+//                .clientSecret("{noop}web-secret")
+//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+//                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+//                .scope(OidcScopes.OPENID)
+//                .scope(OidcScopes.PROFILE)
+//                .scope("api.read")
+//                .build();
+//
+//        RegisteredClient serviceClient = RegisteredClient.withId("service-client-id")
+//                .clientId("service-client")
+//                .clientSecret("{noop}service-secret")
+//                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+//                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+//                .scope("api.read")
+//                .build();
 
-        RegisteredClient serviceClient = RegisteredClient.withId("service-client-id")
-                .clientId("service-client")
-                .clientSecret("{noop}service-secret")
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .scope("api.read")
-                .build();
+        List<RegisteredClient> clients = properties.getClients().stream()
+                .map(prop -> {
+                    RegisteredClient.Builder builder = RegisteredClient.withId(UUID.randomUUID().toString())
+                            .clientId(prop.getClientId())
+                            .clientSecret("{noop}" + prop.getClientSecret())
+                            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
 
-        System.out.println("Registered web-client: redirectUri=" + webClient.getRedirectUris() + ", scopes=" + webClient.getScopes());
-        return new InMemoryRegisteredClientRepository(webClient, serviceClient);
+                    prop.getGrantTypes().forEach(grant -> {
+                        switch (grant) {
+                            case "client_credentials" -> builder.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS);
+                            case "authorization_code" -> builder.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE);
+                            case "refresh_token" -> builder.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);
+                            case "password" -> builder.authorizationGrantType(new AuthorizationGrantType("password"));
+                            // Add other cases if needed
+                        }
+                    });
+
+                    prop.getScopes().forEach(builder::scope);
+                    return builder.build();
+                })
+                .toList();
+        return new InMemoryRegisteredClientRepository(clients);
     }
 
     @Bean

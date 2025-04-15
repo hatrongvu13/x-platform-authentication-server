@@ -7,3 +7,18 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+oauth2:
+  clients:
+    - client-id: service-client
+      client-secret: service-secret
+      grant-types:
+        - client_credentials
+      scopes:
+        - read
+        - write
+    - client-id: another-client
+      client-secret: another-secret
+      grant-types:
+        - client_credentials
+      scopes:
+        - read
