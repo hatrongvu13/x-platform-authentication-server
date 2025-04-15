@@ -1,0 +1,9 @@
+server:
+  port: 9000
+spring:
+  thymeleaf:
+    cache: false
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
