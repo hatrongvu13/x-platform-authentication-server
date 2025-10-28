@@ -13,6 +13,7 @@ import java.util.List;
 @Component
 @Data
 public class OAuth2ClientProperties {
+    private String secret;
     private List<Client> clients = new ArrayList<>();
 
     @Data
