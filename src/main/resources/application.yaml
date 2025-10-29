@@ -1,6 +1,11 @@
 server:
   port: 9000
 spring:
+  security:
+    jwt:
+      key:
+        private: classpath:keys/private.pem
+        public: classpath:keys/public.pem
   thymeleaf:
     cache: false
 logging:

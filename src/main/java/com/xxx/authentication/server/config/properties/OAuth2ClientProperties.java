@@ -1,4 +1,4 @@
-package com.xxx.authentication.server.config;
+package com.xxx.authentication.server.config.properties;
 
 import lombok.Data;
 import lombok.Getter;
